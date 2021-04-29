@@ -1,6 +1,7 @@
 const Tarea = require('../models/Tarea');
 const Proyecto = require('../models/Proyecto');
 const { validationResult } = require('express-validator');
+const { logger } = require('../helpers/logger');
 
 // Crea una nueva tarea
 exports.crearTarea = async (req, res) => {
@@ -11,11 +12,10 @@ exports.crearTarea = async (req, res) => {
         return res.status(400).json({errores: errores.array() })
     }
     
-
     try {
 
         // Extraer el proyecto y comprobar si existe
-        const { proyecto } = req.body;
+        const { nombre, proyecto, ip } = req.body;
 
         const existeProyecto = await Proyecto.findById(proyecto);
         if(!existeProyecto) {
@@ -28,9 +28,11 @@ exports.crearTarea = async (req, res) => {
         }
 
         // Creamos la tarea
-        const tarea = new Tarea(req.body);
+        const tarea = new Tarea({nombre, proyecto});
         await tarea.save();
         res.json({ tarea });
+
+        logger.info({message: 'TAREA CREADA', status: '201', ip, req});
     
     } catch (error) {
         console.log(error);
@@ -44,8 +46,7 @@ exports.obtenerTareas = async (req, res) => {
 
         try {
             // Extraer el proyecto y comprobar si existe
-            const { proyecto } = req.query;
-
+            const { proyecto, ip } = req.query;
 
             const existeProyecto = await Proyecto.findById(proyecto);
             if(!existeProyecto) {
@@ -61,6 +62,8 @@ exports.obtenerTareas = async (req, res) => {
             const tareas = await Tarea.find({ proyecto }).sort({ creado: -1 });
             res.json({ tareas });
 
+            logger.info({message: 'OBTENCION TAREAS', status: '200', ip, req});
+
         } catch (error) {
             console.log(error);
             res.status(500).send('Hubo un error');
@@ -71,7 +74,7 @@ exports.obtenerTareas = async (req, res) => {
 exports.actualizarTarea = async (req, res ) => {
     try {
         // Extraer el proyecto y comprobar si existe
-        const { proyecto, nombre, estado } = req.body;
+        const { proyecto, nombre, estado, ip } = req.body;
 
 
         // Si la tarea existe o no
@@ -98,6 +101,8 @@ exports.actualizarTarea = async (req, res ) => {
 
         res.json({ tarea });
 
+        logger.info({message: 'TAREA ACTUALIZADA', status: '200', ip, req});
+
     } catch (error) {
         console.log(error);
         res.status(500).send('Hubo un error')
@@ -109,7 +114,7 @@ exports.actualizarTarea = async (req, res ) => {
 exports.eliminarTarea = async (req, res) => {
     try {
         // Extraer el proyecto y comprobar si existe
-        const { proyecto  } = req.query;
+        const { proyecto, ip } = req.query;
 
         // Si la tarea existe o no
         let tarea = await Tarea.findById(req.params.id);
@@ -127,8 +132,10 @@ exports.eliminarTarea = async (req, res) => {
         }
 
         // Eliminar
-        await Tarea.findOneAndRemove({_id: req.params.id});
+        await Tarea.findOneAndRemove(req.params.id);
         res.json({msg: 'Tarea Eliminada'})
+
+        logger.info({message: 'TAREA ELIMINADA', status: '200', ip, req});
 
     } catch (error) {
         console.log(error);

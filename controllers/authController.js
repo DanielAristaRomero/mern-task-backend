@@ -2,6 +2,7 @@ const Usuario = require('../models/Usuario');
 const bcryptjs = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../helpers/logger');
 
 exports.autenticarUsuario = async (req, res) => {
     // revisar si hay errores
@@ -11,19 +12,21 @@ exports.autenticarUsuario = async (req, res) => {
     }
 
     // extraer el email y password
-    const { email, password } = req.body;
+    const { email, password, ip } = req.body;
 
     try {
         // Revisar que sea un usuario registrado
         let usuario = await Usuario.findOne({ email });
         if(!usuario) {
-            return res.status(400).json({msg: 'El usuario no existe'});
+            logger.alert({message: 'INTENTO DE LOGIN', level: 'info', status: '406', ip, req});
+            return res.status(406).json({msg: 'El usuario no existe'});
         }
 
         // Revisar el password
         const passCorrecto = await bcryptjs.compare(password, usuario.password);
         if(!passCorrecto) {
-            return res.status(400).json({msg: 'Password Incorrecto' })
+            logger.alert({message: 'INTENTO DE LOGIN', level: 'info', status: '401', ip, req});
+            return res.status(401).json({msg: 'Password Incorrecto' })
         }
 
         // Si todo es correcto Crear y firmar el JWT
@@ -40,8 +43,10 @@ exports.autenticarUsuario = async (req, res) => {
             if(error) throw error;
 
             // Mensaje de confirmación
-            res.json({ token  });
+            res.json({ token });
         });
+
+        logger.info({message: 'INGRESO USUARIO', status: '202', ip, req});
 
     } catch (error) {
         console.log(error);
@@ -51,11 +56,14 @@ exports.autenticarUsuario = async (req, res) => {
 
 // Obtiene que usuario esta autenticado
 exports.usuarioAutenticado = async (req, res) => {
+
     try {
         const usuario = await Usuario.findById(req.usuario.id).select('-password');
         res.json({usuario});
+
     } catch (error) {
         console.log(error);
         res.status(500).json({msg: 'Hubo un error'});
+        logger.info({message: 'ERROR INTERNO', status: '500', req});
     }
 }

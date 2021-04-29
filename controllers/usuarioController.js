@@ -2,6 +2,7 @@ const Usuario = require('../models/Usuario');
 const bcryptjs = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
+const { logger } = require('../helpers/logger');
 
 exports.crearUsuario = async (req, res) => {
 
@@ -12,8 +13,7 @@ exports.crearUsuario = async (req, res) => {
     }
 
     // extraer email y password
-    const { email, password } = req.body;
-    console.log(email, password)
+    const { email, password, ip } = req.body;
 
     try {
         // Revisar que el usuario registrado sea unico
@@ -50,6 +50,7 @@ exports.crearUsuario = async (req, res) => {
             res.json({ token  });
         });
 
+        logger.info({message: 'REGISTRO USUARIO', status: '201', ip, req});
 
     } catch (error) {
         console.log(error);

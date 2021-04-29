@@ -1,5 +1,6 @@
 const Proyecto = require('../models/Proyecto');
 const { validationResult } = require('express-validator');
+const { logger } = require('../helpers/logger');
 
 exports.crearProyecto = async (req, res) => {
 
@@ -12,7 +13,8 @@ exports.crearProyecto = async (req, res) => {
 
     try {
         // Crear un nuevo proyecto
-        const proyecto = new Proyecto(req.body);
+        const {nombre, ip} = req.body;
+        const proyecto = new Proyecto({nombre});
 
         // Guardar el creador via JWT
         proyecto.creador = req.usuario.id;
@@ -20,7 +22,9 @@ exports.crearProyecto = async (req, res) => {
         // guardamos el proyecto
         proyecto.save();
         res.json(proyecto);
-        
+
+        logger.info({message: 'PROYECTO CREADO', status: '201', ip, req});
+
     } catch (error) {
         console.log(error);
         res.status(500).send('Hubo un error');
@@ -82,14 +86,19 @@ exports.actualizarProyecto = async (req, res) => {
 }
 
 // Elimina un proyecto por su id
-exports.eliminarProyecto = async (req, res ) => {
+exports.eliminarProyecto = async (req, res) => {
     try {
+        
+        const cadena = req.params.id.split('::');
+        const proyectoId = cadena[0];
+        const ip = cadena[1];
+
         // revisar el ID 
-        let proyecto = await Proyecto.findById(req.params.id);
+        let proyecto = await Proyecto.findById(proyectoId);
 
         // si el proyecto existe o no
         if(!proyecto) {
-            return res.status(404).json({msg: 'Proyecto no encontrado'})
+            return res.status(404).json({msg: 'Proyecto no encontrado'});
         }
 
         // verificar el creador del proyecto
@@ -98,8 +107,10 @@ exports.eliminarProyecto = async (req, res ) => {
         }
 
         // Eliminar el Proyecto
-        await Proyecto.findOneAndRemove({ _id : req.params.id });
+        await Proyecto.findOneAndRemove({ _id : proyectoId });
         res.json({ msg: 'Proyecto eliminado '})
+        
+        logger.info({message: 'PROYECTO ELIMINADO', status: '200', ip, req});
 
     } catch (error) {
         console.log(error);

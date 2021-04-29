@@ -7,7 +7,7 @@
     "start": "node .",
     "dev": "nodemon ."
   },
-  "author": "Juan Pablo De la torre",
+  "author": "Equipo 1",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^2.0.0"
@@ -19,6 +19,8 @@
     "express": "^4.17.1",
     "express-validator": "^6.10.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.12.4"
+    "mongoose": "^5.12.4",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.2"
   }
 }
